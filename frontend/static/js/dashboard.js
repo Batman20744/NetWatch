@@ -46,11 +46,6 @@ function showMessage(message, type = "success") {
     box.textContent = message;
     box.className = `message ${type}`;
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-
     clearTimeout(showMessage.timer);
 
     showMessage.timer = setTimeout(() => {
