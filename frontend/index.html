@@ -1,0 +1,627 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetWatch | Security Operations Center</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <div>
+                <h2>NETWATCH</h2>
+                <small>NETWORK SECURITY</small>
+            </div>
+        </div>
+
+        <div class="nav-label">MAIN MENU</div>
+
+        <a href="#overview" class="nav-link active">
+            <span class="nav-icon"><i class="bi bi-grid-1x2"></i></span>
+            Overview
+        </a>
+
+        <a href="#monitoring" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-activity"></i></span>
+            Traffic Monitoring
+        </a>
+
+        <a href="#analytics" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-bar-chart-line"></i></span>
+            Analytics
+        </a>
+
+        <div class="nav-label">SECURITY</div>
+
+        <a href="#alerts" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-shield-exclamation"></i></span>
+            Security Alerts
+        </a>
+
+        <a href="#live-monitor" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-broadcast"></i></span>
+            Live Monitoring
+        </a>
+
+        <a href="#ip-reputation" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-globe2"></i></span>
+            IP Reputation
+        </a>
+
+        <a href="#pcap" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-file-earmark-binary"></i></span>
+            PCAP Analyzer
+        </a>
+
+        <a href="#history" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-clock-history"></i></span>
+            Analysis History
+        </a>
+
+        <div class="nav-label">SYSTEM</div>
+
+        <a href="#reports" class="nav-link">
+            <span class="nav-icon"><i class="bi bi-file-earmark-text"></i></span>
+            Reports
+        </a>
+
+        <div class="sidebar-bottom">
+            <div class="system-status">
+                <span class="status-dot"></span>
+                SYSTEM OPERATIONAL
+            </div>
+            <small style="color:var(--muted);display:block;margin-top:10px">
+                NetWatch Security Engine v1.0
+            </small>
+        </div>
+
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div style="display:flex;align-items:center;gap:12px">
+
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <div class="page-title">
+                    <div class="eyebrow">SECURITY OPERATIONS CENTER</div>
+                    <h1>Network Overview</h1>
+                    <p>Monitor network activity and detect suspicious traffic.</p>
+                </div>
+
+            </div>
+
+            <div class="top-actions">
+
+                <span class="top-status">
+                    <span class="status-dot" style="display:inline-block"></span>
+                    ENGINE READY
+                </span>
+
+                <button class="btn btn-secondary" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+
+            </div>
+
+        </header>
+
+        <!-- MESSAGE -->
+        <div id="messageBox" class="message"></div>
+
+        <!-- OVERVIEW -->
+        <section class="section" id="overview">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Security Overview</h2>
+                    <p>Current traffic analysis summary</p>
+                </div>
+
+                <span class="top-status">CSV ANALYSIS</span>
+            </div>
+
+            <div class="stats-grid">
+
+                <div class="stat-card teal">
+                    <div class="stat-label">
+                        <i class="bi bi-diagram-3"></i>
+                        PACKETS ANALYZED
+                    </div>
+                    <div class="stat-value" id="totalRecords">--</div>
+                    <div class="stat-description">Network packets analyzed</div>
+                </div>
+
+                <div class="stat-card red">
+                    <div class="stat-label">
+                        <i class="bi bi-shield-exclamation"></i>
+                        TOTAL ALERTS
+                    </div>
+                    <div class="stat-value" id="totalAlerts">--</div>
+                    <div class="stat-description">Suspicious events detected</div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-label">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        HIGH SEVERITY
+                    </div>
+                    <div class="stat-value" id="highAlerts">--</div>
+                    <div class="stat-description">Critical security alerts</div>
+                </div>
+
+                <div class="stat-card blue">
+                    <div class="stat-label">
+                        <i class="bi bi-info-circle"></i>
+                        MEDIUM SEVERITY
+                    </div>
+                    <div class="stat-value" id="mediumAlerts">--</div>
+                    <div class="stat-description">Medium risk alerts</div>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- ANALYTICS -->
+        <section class="section" id="analytics">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Network Analytics</h2>
+                    <p>Traffic distribution and security activity</p>
+                </div>
+            </div>
+
+            <div class="analytics-grid">
+
+                <div class="panel">
+
+                    <div class="section-heading">
+                        <div>
+                            <h2>Traffic Distribution</h2>
+                            <p>Data transferred by source IP</p>
+                        </div>
+                        <i class="bi bi-bar-chart-fill" style="color:var(--teal)"></i>
+                    </div>
+
+                    <div class="chart-container large">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+
+                </div>
+
+                <div class="panel">
+
+                    <div class="section-heading">
+                        <div>
+                            <h2>Threat Severity</h2>
+                            <p>Distribution of detected alerts</p>
+                        </div>
+                        <i class="bi bi-pie-chart-fill" style="color:var(--teal)"></i>
+                    </div>
+
+                    <div class="chart-container large">
+                        <canvas id="severityChart"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- TIMELINE -->
+        <section class="section" id="monitoring">
+
+            <div class="panel">
+
+                <div class="section-heading">
+                    <div>
+                        <h2>Network Activity Timeline</h2>
+                        <p>Traffic records and alerts over time</p>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- SECURITY ALERTS -->
+        <section class="section" id="alerts">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Security Alerts</h2>
+                    <p>Detected suspicious network activity</p>
+                </div>
+
+                <a href="#" data-report-source="csv" class="btn btn-secondary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+            </div>
+
+            <div class="panel">
+
+                <div class="alert-toolbar">
+
+                    <input type="search"
+                           id="alertSearch"
+                           placeholder="Search IP, port or alert reason...">
+
+                    <select id="severityFilter">
+                        <option value="all">All Severity</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+
+                </div>
+
+                <div class="table-wrapper">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>TIMESTAMP</th>
+                                <th>SOURCE IP</th>
+                                <th>DESTINATION IP</th>
+                                <th>PORT</th>
+                                <th>PROTOCOL</th>
+                                <th>PACKETS</th>
+                                <th>SEVERITY</th>
+                                <th>REASON</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="alertsTable">
+                            <tr>
+                                <td colspan="8" style="text-align:center;color:var(--muted)">
+                                    Loading security alerts...
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- LIVE PACKET MONITORING -->
+        <section class="section" id="live-monitor">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Live Packet Monitoring</h2>
+                    <p>Capture IPv4 traffic from a network interface and inspect events in real time.</p>
+                </div>
+                <span id="liveState" class="top-status">STOPPED</span>
+            </div>
+
+            <div class="panel" style="padding:22px">
+
+                <div class="toolbar" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+
+                    <label for="liveInterface">Network interface</label>
+
+                    <input id="liveInterface"
+                           type="text"
+                           placeholder="Default interface (blank)"
+                           style="max-width:260px">
+
+                    <button class="btn" id="startLiveBtn">
+                        <i class="bi bi-play-fill"></i> Start Capture
+                    </button>
+
+                    <button class="btn btn-secondary" id="stopLiveBtn" disabled>
+                        <i class="bi bi-stop-fill"></i> Stop Capture
+                    </button>
+
+                    <button class="btn btn-secondary" id="refreshLiveBtn">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+
+                </div>
+
+                <p class="upload-note">
+                    Live capture may require running the backend with suitable packet-capture permissions.
+                    Only monitor networks you own or are authorized to assess.
+                </p>
+
+                <div class="stats-grid" style="margin-top:18px">
+
+                    <div class="stat-card">
+                        <div class="stat-label">Captured Packets</div>
+                        <div class="stat-value" id="livePackets">0</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Captured Bytes</div>
+                        <div class="stat-value" id="liveBytes">0 B</div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Live Alerts</div>
+                        <div class="stat-value" id="liveAlerts">0</div>
+                    </div>
+
+                </div>
+
+                <h3 style="margin-top:24px">Recent Live Security Events</h3>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>TIME</th>
+                                <th>SOURCE IP</th>
+                                <th>DESTINATION IP</th>
+                                <th>PROTOCOL</th>
+                                <th>PORT</th>
+                                <th>ALERT</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="liveEventsTable">
+                            <tr>
+                                <td colspan="6">No live events yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- IP REPUTATION LOOKUP -->
+        <section class="section" id="ip-reputation">
+
+            <div class="section-heading">
+                <div>
+                    <h2>IP Reputation Lookup</h2>
+                    <p>Check public IP addresses against AbuseIPDB threat intelligence.</p>
+                </div>
+            </div>
+
+            <div class="panel" style="padding:22px">
+
+                <form id="reputationForm"
+                      class="toolbar"
+                      style="display:flex;gap:12px;flex-wrap:wrap">
+
+                    <input id="reputationIP"
+                           type="text"
+                           placeholder="Enter public IP address (e.g. 8.8.8.8)"
+                           required
+                           style="max-width:360px">
+
+                    <button class="btn" id="checkReputationBtn" type="submit">
+                        <i class="bi bi-search"></i> Check Reputation
+                    </button>
+
+                </form>
+
+                <p class="upload-note">
+                    Requires an AbuseIPDB API key configured as ABUSEIPDB_API_KEY.
+                    The queried public IP is sent to AbuseIPDB for checking.
+                </p>
+
+                <div id="reputationResult"
+                     style="margin-top:18px;color:var(--muted)">
+                    No reputation lookup performed.
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- PCAP ANALYZER -->
+        <section class="section" id="pcap">
+
+            <div class="section-heading">
+                <div>
+                    <h2>PCAP Analyzer</h2>
+                    <p>Upload and analyze network packet captures</p>
+                </div>
+            </div>
+
+            <div class="upload-grid">
+
+                <div class="upload-box">
+
+                    <h3>
+                        <i class="bi bi-cloud-upload" style="color:var(--teal)"></i>
+                        Upload PCAP File
+                    </h3>
+
+                    <form id="pcapForm">
+
+                        <input type="file"
+                               id="pcapFile"
+                               accept=".pcap,.pcapng"
+                               required>
+
+                        <button type="submit" class="btn">
+                            <i class="bi bi-search"></i>
+                            Analyze Capture
+                        </button>
+
+                    </form>
+
+                    <p class="upload-note">
+                        Supported formats: PCAP, PCAPNG. Maximum size: 10 MB.
+                    </p>
+
+                </div>
+
+                <div class="upload-box">
+
+                    <h3>
+                        <i class="bi bi-file-earmark-bar-graph" style="color:var(--teal)"></i>
+                        Sample Traffic Analysis
+                    </h3>
+
+                    <p style="color:var(--muted);font-size:12px;margin-bottom:15px">
+                        Analyze the project's existing sample traffic dataset.
+                    </p>
+
+                    <button class="btn btn-secondary" id="analyzeCsvBtn">
+                        <i class="bi bi-play-fill"></i>
+                        Analyze Sample CSV
+                    </button>
+
+                    <p class="upload-note">
+                        Uses data/sample_traffic.csv
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- HISTORY -->
+        <section class="section" id="history">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Analysis History</h2>
+                    <p>Previously completed traffic analyses</p>
+                </div>
+
+                <button class="btn btn-secondary" id="refreshHistoryBtn">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh History
+                </button>
+
+            </div>
+
+            <div class="panel">
+
+                <div class="table-wrapper">
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>FILENAME</th>
+                                <th>TYPE</th>
+                                <th>RECORDS</th>
+                                <th>ALERTS</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="historyTable">
+                            <tr>
+                                <td colspan="6" style="text-align:center;color:var(--muted)">
+                                    Loading analysis history...
+                                </td>
+                            </tr>
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- REPORTS -->
+        <section class="section" id="reports">
+
+            <div class="section-heading">
+                <div>
+                    <h2>Security Reports</h2>
+                    <p>Download generated analysis reports</p>
+                </div>
+            </div>
+
+            <div class="panel">
+
+                <div class="toolbar">
+
+                    <a href="#"
+                       data-report-source="csv"
+                       class="btn">
+                        <i class="bi bi-filetype-csv"></i>
+                        Download CSV Report
+                    </a>
+
+                    <a href="#"
+                       data-report-source="pcap"
+                       class="btn btn-secondary">
+                        <i class="bi bi-file-earmark-binary"></i>
+                        Download PCAP Report
+                    </a>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            NETWATCH SECURITY OPERATIONS CENTER
+            <br><br>
+            Traffic Anomaly Detection System | Built for Network Security Monitoring
+        </footer>
+
+    </main>
+
+</div>
+
+<script>
+    /*
+     * Set API_BASE_URL to the public Flask backend URL after it is deployed.
+     * Example: https://netwatch-api.example.com
+     * Do not include a trailing slash.
+     */
+    window.NETWATCH_CONFIG = {
+        API_BASE_URL: "https://YOUR-BACKEND-URL"
+    };
+
+    // Configure report download links to use the Flask backend.
+    const netwatchBackendBase =
+        window.NETWATCH_CONFIG.API_BASE_URL.replace(/\/+$/, "");
+
+    document.querySelectorAll("[data-report-source]").forEach((link) => {
+        const source = encodeURIComponent(link.dataset.reportSource);
+        link.href =
+            `${netwatchBackendBase}/api/report?source=${source}`;
+    });
+</script>
+
+<script src="/static/js/dashboard.js"></script>
+
+</body>
+</html>

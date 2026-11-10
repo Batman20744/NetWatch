@@ -1,6 +1,8 @@
 
 from pathlib import Path
 from uuid import uuid4
+import os
+from flask_cors import CORS
 
 import pandas as pd
 from flask import Flask, jsonify, render_template, request, send_file
@@ -56,6 +58,21 @@ app = Flask(
 )
 
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_BYTES
+
+# Allow the deployed frontend to communicate with the Flask API.
+frontend_origin = os.getenv(
+    "NETWATCH_FRONTEND_ORIGIN",
+    "http://localhost:5000"
+)
+
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": [frontend_origin]
+        }
+    }
+)
 
 
 # =====================================================
