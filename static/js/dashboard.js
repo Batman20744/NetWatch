@@ -103,8 +103,12 @@ async function loadDashboard(source = "csv", path = null) {
 // =====================================================
 
 function updateStatistics(data) {
+    // Display actual packet count when available.
+    // Fall back to traffic records for older API responses.
     $("totalRecords").textContent =
-        Number(data.total_records || 0).toLocaleString();
+        Number(
+            data.total_packets ?? data.total_records ?? 0
+        ).toLocaleString();
 
     $("totalAlerts").textContent =
         Number(data.total_alerts || 0).toLocaleString();
@@ -641,9 +645,7 @@ async function viewHistory(id) {
 
         renderAlerts(currentAlerts);
 
-        // Reset filters for saved analysis
         $("alertSearch").value = "";
-
         $("severityFilter").value = "all";
 
         showMessage(
@@ -780,10 +782,26 @@ function setupEvents() {
     );
 
     // LIVE CAPTURE AND REPUTATION
-    $("startLiveBtn").addEventListener("click", startLiveCapture);
-    $("stopLiveBtn").addEventListener("click", stopLiveCapture);
-    $("refreshLiveBtn").addEventListener("click", refreshLiveStatus);
-    $("reputationForm").addEventListener("submit", checkReputation);
+
+    $("startLiveBtn").addEventListener(
+        "click",
+        startLiveCapture
+    );
+
+    $("stopLiveBtn").addEventListener(
+        "click",
+        stopLiveCapture
+    );
+
+    $("refreshLiveBtn").addEventListener(
+        "click",
+        refreshLiveStatus
+    );
+
+    $("reputationForm").addEventListener(
+        "submit",
+        checkReputation
+    );
 
     // VIEW HISTORY DETAILS
 
@@ -843,52 +861,102 @@ document.addEventListener(
 
 function formatBytes(value) {
     const bytes = Number(value || 0);
+
     if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+
+    if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 function renderLiveStatus(data) {
-    $("liveState").textContent = data.running ? "CAPTURING" : "STOPPED";
-    $("livePackets").textContent = Number(data.packets || 0).toLocaleString();
-    $("liveBytes").textContent = formatBytes(data.bytes);
-    $("liveAlerts").textContent = (data.recent_alerts || []).length;
-    $("startLiveBtn").disabled = Boolean(data.running);
-    $("stopLiveBtn").disabled = !data.running;
+    $("liveState").textContent =
+        data.running ? "CAPTURING" : "STOPPED";
+
+    $("livePackets").textContent =
+        Number(data.packets || 0).toLocaleString();
+
+    $("liveBytes").textContent =
+        formatBytes(data.bytes);
+
+    $("liveAlerts").textContent =
+        (data.recent_alerts || []).length;
+
+    $("startLiveBtn").disabled =
+        Boolean(data.running);
+
+    $("stopLiveBtn").disabled =
+        !data.running;
+
     const rows = data.recent_alerts || [];
-    $("liveEventsTable").innerHTML = rows.length ? rows.slice(0, 30).map(item => `
-        <tr><td>${escapeHTML(item.timestamp)}</td><td class="mono">${escapeHTML(item.source_ip)}</td>
-        <td class="mono">${escapeHTML(item.destination_ip)}</td><td>${escapeHTML(item.protocol)}</td>
-        <td>${escapeHTML(item.destination_port)}</td><td>${escapeHTML(item.alert_reasons)}</td></tr>
-    `).join("") : '<tr><td colspan="6" style="text-align:center">No live security events detected.</td></tr>';
-    if (data.error) showMessage(data.error, "error");
+
+    $("liveEventsTable").innerHTML = rows.length
+        ? rows.slice(0, 30).map(item => `
+            <tr>
+                <td>${escapeHTML(item.timestamp)}</td>
+                <td class="mono">${escapeHTML(item.source_ip)}</td>
+                <td class="mono">${escapeHTML(item.destination_ip)}</td>
+                <td>${escapeHTML(item.protocol)}</td>
+                <td>${escapeHTML(item.destination_port)}</td>
+                <td>${escapeHTML(item.alert_reasons)}</td>
+            </tr>
+        `).join("")
+        : '<tr><td colspan="6" style="text-align:center">No live security events detected.</td></tr>';
+
+    if (data.error) {
+        showMessage(data.error, "error");
+    }
 }
 
 async function refreshLiveStatus() {
     try {
         const data = await fetchJSON("/api/live/status");
         renderLiveStatus(data);
-    } catch (error) { console.error("Live status error:", error); }
+    } catch (error) {
+        console.error("Live status error:", error);
+    }
 }
 
 async function startLiveCapture() {
     try {
-        const interfaceName = $("liveInterface").value.trim();
+        const interfaceName =
+            $("liveInterface").value.trim();
+
         const data = await fetchJSON("/api/live/start", {
-            method: "POST", headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({interface: interfaceName})
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                interface: interfaceName
+            })
         });
+
         renderLiveStatus(data);
+
         showMessage("Live packet capture started.");
-    } catch (error) { showMessage(error.message, "error"); }
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
 }
 
 async function stopLiveCapture() {
     try {
-        const data = await fetchJSON("/api/live/stop", {method: "POST"});
+        const data = await fetchJSON(
+            "/api/live/stop",
+            {method: "POST"}
+        );
+
         renderLiveStatus(data);
+
         showMessage("Live packet capture stopped.");
-    } catch (error) { showMessage(error.message, "error"); }
+
+    } catch (error) {
+        showMessage(error.message, "error");
+    }
 }
 
 // =====================================================
@@ -897,30 +965,77 @@ async function stopLiveCapture() {
 
 async function checkReputation(event) {
     event.preventDefault();
+
     const ip = $("reputationIP").value.trim();
     const button = $("checkReputationBtn");
     const resultBox = $("reputationResult");
+
     button.disabled = true;
     resultBox.textContent = "Checking AbuseIPDB...";
+
     try {
         const data = await fetchJSON("/api/reputation", {
-            method: "POST", headers: {"Content-Type": "application/json"},
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({ip})
         });
-        const riskClass = String(data.risk || "Low").toLowerCase();
+
+        const riskClass =
+            String(data.risk || "Low").toLowerCase();
+
         resultBox.innerHTML = `
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-label">IP Address</div><div class="stat-value" style="font-size:20px">${escapeHTML(data.ip)}</div></div>
-                <div class="stat-card"><div class="stat-label">Abuse Confidence</div><div class="stat-value">${escapeHTML(data.abuse_confidence_score)}%</div></div>
-                <div class="stat-card"><div class="stat-label">Risk Level</div><div class="stat-value ${riskClass}">${escapeHTML(data.risk)}</div></div>
-                <div class="stat-card"><div class="stat-label">Total Reports</div><div class="stat-value">${escapeHTML(data.total_reports)}</div></div>
+
+                <div class="stat-card">
+                    <div class="stat-label">IP Address</div>
+                    <div class="stat-value" style="font-size:20px">
+                        ${escapeHTML(data.ip)}
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Abuse Confidence</div>
+                    <div class="stat-value">
+                        ${escapeHTML(data.abuse_confidence_score)}%
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Risk Level</div>
+                    <div class="stat-value ${riskClass}">
+                        ${escapeHTML(data.risk)}
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Total Reports</div>
+                    <div class="stat-value">
+                        ${escapeHTML(data.total_reports)}
+                    </div>
+                </div>
+
             </div>
-            <p style="margin-top:14px">Country: ${escapeHTML(data.country_code)} · ISP: ${escapeHTML(data.isp)} · Domain: ${escapeHTML(data.domain)} · Tor: ${data.is_tor ? "Yes" : "No"}</p>
-            <small>Source: AbuseIPDB${data.cached ? " (cached result)" : ""}. Reputation scores are indicators, not proof of malicious activity.</small>
+
+            <p style="margin-top:14px">
+                Country: ${escapeHTML(data.country_code)}
+                · ISP: ${escapeHTML(data.isp)}
+                · Domain: ${escapeHTML(data.domain)}
+                · Tor: ${data.is_tor ? "Yes" : "No"}
+            </p>
+
+            <small>
+                Source: AbuseIPDB${data.cached ? " (cached result)" : ""}.
+                Reputation scores are indicators, not proof of malicious activity.
+            </small>
         `;
+
     } catch (error) {
         resultBox.textContent = error.message;
         showMessage(error.message, "error");
-    } finally { button.disabled = false; }
-}
 
+    } finally {
+        button.disabled = false;
+    }
+}

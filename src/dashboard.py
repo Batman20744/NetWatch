@@ -3,13 +3,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import pandas as pd
-from flask import (
-    Flask,
-    jsonify,
-    render_template,
-    request,
-    send_file,
-)
+from flask import Flask, jsonify, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 # Support package imports and direct script execution.
@@ -154,7 +148,6 @@ def build_timeline(traffic, alerts):
             if pd.isna(timestamp):
                 return None
 
-            # FIX: Use 10-second intervals instead of 1 minute.
             return timestamp.floor("10s").isoformat()
 
         except (TypeError, ValueError, OverflowError):
@@ -162,9 +155,7 @@ def build_timeline(traffic, alerts):
 
     buckets = {}
 
-    # -------------------------------------------------
     # COUNT TRAFFIC RECORDS
-    # -------------------------------------------------
 
     for _, row in traffic.iterrows():
 
@@ -184,9 +175,7 @@ def build_timeline(traffic, alerts):
 
         bucket["traffic_records"] += 1
 
-    # -------------------------------------------------
     # COUNT SECURITY ALERTS
-    # -------------------------------------------------
 
     for _, row in alerts.iterrows():
 
@@ -206,9 +195,7 @@ def build_timeline(traffic, alerts):
 
         bucket["alerts"] += 1
 
-    # -------------------------------------------------
     # SORT TIMELINE CHRONOLOGICALLY
-    # -------------------------------------------------
 
     return sorted(
         buckets.values(),
@@ -229,6 +216,21 @@ def build_dashboard_data(
 
     # Load traffic
     traffic = load_traffic(source_type, pcap_path)
+
+    # Calculate actual packets represented by traffic records.
+    # PCAP analysis aggregates packets into traffic records.
+    if "packet_count" in traffic.columns:
+
+        total_packets = int(
+            pd.to_numeric(
+                traffic["packet_count"],
+                errors="coerce",
+            ).fillna(0).sum()
+        )
+
+    else:
+
+        total_packets = int(len(traffic))
 
     # Detect anomalies
     alerts = detect_anomalies(traffic)
@@ -254,32 +256,29 @@ def build_dashboard_data(
         REPORTS_DIR / "dashboard_traffic_chart.png",
     )
 
-    # -------------------------------------------------
     # SAVE ANALYSIS TO SQLITE
-    # -------------------------------------------------
 
     if filename:
-
         analysis_filename = filename
 
     elif source_type == "pcap" and pcap_path:
-
         analysis_filename = Path(pcap_path).name
 
     else:
-
         analysis_filename = DATA_FILE.name
 
     analysis_id = save_analysis(
         filename=analysis_filename,
         analysis_type=source_type.upper(),
+
+        # Keep this as aggregated traffic records
+        # for existing analysis-history behaviour.
         total_records=len(traffic),
+
         alerts=alerts,
     )
 
-    # -------------------------------------------------
     # TRAFFIC DISTRIBUTION
-    # -------------------------------------------------
 
     traffic_by_source = (
         traffic.groupby("source_ip")["bytes_sent"]
@@ -287,9 +286,7 @@ def build_dashboard_data(
         .sort_values(ascending=False)
     )
 
-    # -------------------------------------------------
     # SEVERITY COUNTS
-    # -------------------------------------------------
 
     severity_counts = (
         alerts["severity"].value_counts().to_dict()
@@ -297,9 +294,7 @@ def build_dashboard_data(
         else {}
     )
 
-    # -------------------------------------------------
     # ALERT TABLE COLUMNS
-    # -------------------------------------------------
 
     alert_columns = [
         "timestamp",
@@ -313,9 +308,7 @@ def build_dashboard_data(
         "alert_reasons",
     ]
 
-    # -------------------------------------------------
     # TRAFFIC TABLE COLUMNS
-    # -------------------------------------------------
 
     traffic_columns = [
         "timestamp",
@@ -346,9 +339,7 @@ def build_dashboard_data(
     # Build timeline using 10-second buckets
     timeline = build_timeline(traffic, alerts)
 
-    # -------------------------------------------------
     # RETURN DASHBOARD DATA
-    # -------------------------------------------------
 
     return {
         "analysis_id": analysis_id,
@@ -356,6 +347,9 @@ def build_dashboard_data(
         "source_type": source_type,
 
         "total_records": int(len(traffic)),
+
+        # New metric: actual packets represented by records.
+        "total_packets": total_packets,
 
         "total_alerts": int(len(alerts)),
 
@@ -719,24 +713,6 @@ def upload_too_large(_error):
 
 
 # =====================================================
-# START NETWATCH SERVER
-# =====================================================
-
-if __name__ == "__main__":
-
-    UPLOADS_DIR.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    app.run(
-        host="127.0.0.1",
-        port=5000,
-        debug=False,
-    )
-
-
-# =====================================================
 # LIVE PACKET MONITORING API
 # =====================================================
 
@@ -749,8 +725,10 @@ def live_status_api():
 def live_start_api():
     payload = request.get_json(silent=True) or {}
     interface = (payload.get("interface") or "").strip() or None
+
     if interface and len(interface) > 64:
         return jsonify({"error": "Interface name is too long."}), 400
+
     try:
         return jsonify(live_monitor.start(interface))
     except RuntimeError as error:
@@ -770,9 +748,28 @@ def live_stop_api():
 def ip_reputation_api():
     payload = request.get_json(silent=True) or {}
     ip_value = payload.get("ip", "")
+
     try:
         return jsonify(check_ip_reputation(ip_value))
     except ValueError as error:
         return jsonify({"error": str(error)}), 400
     except RuntimeError as error:
         return jsonify({"error": str(error)}), 503
+
+
+# =====================================================
+# START NETWATCH SERVER
+# =====================================================
+
+if __name__ == "__main__":
+
+    UPLOADS_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    app.run(
+        host="127.0.0.1",
+        port=5000,
+        debug=False,
+    )

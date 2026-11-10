@@ -6,3 +6,5 @@ __pycache__/
 uploads/*
 !uploads/.gitkeep
 *.db
+*.backup
+data/netwatch_stress_test_5000.pcap
